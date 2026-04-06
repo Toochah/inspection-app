@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1976d2">
+    <title>Осмотр Складского Комплекса</title>
+    <style>
+        /* === СТИЛИ (CSS) === */
+        :root {
+            --primary: #1976d2;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding-bottom: 80px; /* Место для кнопки */
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 { margin: 0; font-size: 18px; }
+        .connection-status {
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; display: inline-block; }
+        .status-dot.offline { background: #f44336; }
+
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: #fafafa;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            background: #fff;
+        }
+
+        /* Кнопки зон */
+        .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .zone-btn {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            text-align: center;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .zone-btn.active { border-color: var(--primary); background: #e3f2fd; color: var(--primary); font-weight: bold; }
+
+        /* Кнопки приоритета */
+        .priority-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .prio-btn {
+            padding: 10px 5px;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        .prio-btn.active { opacity: 1; transform: scale(1.05); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .prio-low { background: var(--success); }
+        .prio-med { background: var(--warning); }
+        .prio-high { background: var(--danger); }
+        .prio-crit { background: #9c27b0; }
+
+        /* Фото */
+        .photo-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .photo-area:active { background: #f0f0f0; }
+        #preview { max-width: 100%; margin-top: 10px; border-radius: 8px; display: none; }
+
+        /* Нижняя панель */
+        .submit-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 99;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .submit-btn:disabled { background: #ccc; }
+
+        /* Уведомление */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 200;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🏭 Сезонный осмотр склада</h1>
+    <div class="connection-status">
+        <span class="status-dot" id="netDot"></span>
+        <span id="netText">Онлайн</span>
+    </div>
+</div>
+
+<div class="container">
+    <form id="inspectionForm">
+        
+        <!-- Дата и Инженер -->
+        <div class="card">
+            <span class="label">Дата осмотра</span>
+            <input type="date" id="date" required>
+            <span class="label" style="margin-top:10px">ФИО Инженера</span>
+            <input type="text" id="inspector" placeholder="Иванов И.И." required>
+        </div>
+
+        <!-- Зона -->
+        <div class="card">
+            <span class="label">Зона осмотра</span>
+            <div class="zone-grid">
+                <div class="zone-btn" onclick="selectZone(this, 'Территория')">🌳 Территория</div>
+                <div class="zone-btn" onclick="selectZone(this, 'Кровля')">🏠 Кровля</div>
+                <div class="zone-btn" onclick="selectZone(this, 'Фасады')">🏢 Фасады</div>
+                <div class="zone-btn" onclick="selectZone(this, 'Сети')">⚙️ Инж. сети</div>
+                <div class="zone-btn" onclick="selectZone(this, 'Ворота')">🚪 Ворота/Доки</div>
+                <div class="zone-btn" onclick="selectZone(this, 'Дороги')">🛣️ Дороги</div>
+            </div>
+            <input type="hidden" id="zone" required>
+        </div>
+
+        <!-- Дефект -->
+        <div class="card">
+            <span class="label">Тип дефекта</span>
+            <select id="defectType">
+                <option value="">-- Выберите --</option>
+                <option value="Трещина">Трещина в конструкции</option>
+                <option value="Протечка">Протечка</option>
+                <option value="Коррозия">Коррозия металла</option>
+                <option value="Разрушение">Разрушение покрытия</option>
+                <option value="Засор">Засор водостока/ливневки</option>
+                <option value="Повреждение">Механическое повреждение</option>
+            </select>
+        </div>
+
+        <!-- Приоритет -->
+        <div class="card">
+            <span class="label">Приоритет</span>
+            <div class="priority-grid">
+                <button type="button" class="prio-btn prio-low" onclick="selectPriority(this, 'Низкий')">Низкий</button>
+                <button type="button" class="prio-btn prio-med" onclick="selectPriority(this, 'Средний')">Средний</button>
+                <button type="button" class="prio-btn prio-high" onclick="selectPriority(this, 'Высокий')">Высокий</button>
+                <button type="button" class="prio-btn prio-crit" onclick="selectPriority(this, 'Критический')">Крит.</button>
+            </div>
+            <input type="hidden" id="priority" required>
+        </div>
+
+        <!-- Описание -->
+        <div class="card">
+            <span class="label">Описание (по ГОСТ)</span>
+            <textarea id="description" rows="4" placeholder="Укажите место, размеры, ссылки на нормативы..."></textarea>
+        </div>
+
+        <!-- Фото -->
+        <div class="card">
+            <span class="label">Фотофиксация</span>
+            <div class="photo-area" onclick="document.getElementById('fileInput').click()">
+                <span style="font-size:24px">📷</span><br>
+                Нажмите для съемки
+            </div>
+            <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+            <img id="preview" alt="Предпросмотр">
+        </div>
+
+    </form>
+</div>
+
+<div class="submit-bar">
+    <button type="button" class="submit-btn" onclick="submitForm()" id="submitBtn">СОХРАНИТЬ И ОТПРАВИТЬ</button>
+</div>
+
+<div class="toast" id="toast">Сохранено</div>
+
+<script>
+    /* === НАСТРОЙКИ === */
+    // ВСТАВЬТЕ СЮДА ВАШ URL ИЗ GOOGLE APPS SCRIPT
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzPiOBEB9hmnEKoMk0bo1JmZx7D7ytT9hJOqAqF3mPsH17X24O2X2HnIX-m-mA0BSfDZw/exec; 
+    
+    /* === ИНТЕРФЕЙС === */
+    // Установка текущей даты
+    document.getElementById('date').valueAsDate = new Date();
+
+    // Обновление статуса сети
+    function updateNetStatus() {
+        const isOnline = navigator.onLine;
+        const dot = document.getElementById('netDot');
+        const text = document.getElementById('netText');
+        
+        if (isOnline) {
+            dot.classList.remove('offline');
+            text.innerText = 'Онлайн';
+        } else {
+            dot.classList.add('offline');
+            text.innerText = 'Офлайн (Данные в очереди)';
+        }
+    }
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+    updateNetStatus();
+
+    // Выбор зоны
+    function selectZone(el, value) {
+        document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('zone').value = value;
+    }
+
+    // Выбор приоритета
+    function selectPriority(el, value) {
+        document.querySelectorAll('.prio-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('priority').value = value;
+    }
+
+    // Обработка фото (сжатие)
+    let photoData = null;
+    function handlePhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_W = 1024; // Сжимаем до 1024px
+                    const scale = MAX_W / img.width;
+                    canvas.width = MAX_W;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    // Получаем Base64
+                    photoData = canvas.toDataURL('image/jpeg', 0.7); // Качество 70%
+                    
+                    const preview = document.getElementById('preview');
+                    preview.src = photoData;
+                    preview.style.display = 'block';
+                }
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    /* === БАЗА ДАННЫХ (IndexedDB) === */
+    const DB_NAME = 'InspectionDB';
+    const STORE_NAME = 'records';
+
+    function getDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function saveRecord(record) {
+        const db = await getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).add(record);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject();
+        });
+    }
+
+    async function getAllRecords() {
+        const db = await getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const req = tx.objectStore(STORE_NAME).getAll();
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject();
+        });
+    }
+
+    async function deleteRecord(id) {
+        const db = await getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).delete(id);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject();
+        });
+    }
+
+    /* === ЛОГИКА ОТПРАВКИ === */
+    async function submitForm() {
+        const btn = document.getElementById('submitBtn');
+        
+        // Простая валидация
+        const zone = document.getElementById('zone').value;
+        const priority = document.getElementById('priority').value;
+        if (!zone || !priority) {
+            alert('Заполните Зону и Приоритет!');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = 'Сохранение...';
+
+        const record = {
+            date: document.getElementById('date').value,
+            inspector: document.getElementById('inspector').value,
+            zone: zone,
+            defectType: document.getElementById('defectType').value,
+            priority: priority,
+            description: document.getElementById('description').value,
+            photo: photoData,
+            synced: false
+        };
+
+        // 1. Всегда сохраняем локально
+        await saveRecord(record);
+        showToast('✅ Сохранено');
+
+        // 2. Если онлайн - пробуем отправить всё
+        if (navigator.onLine) {
+            await syncData();
+        }
+
+        // 3. Сброс формы
+        document.getElementById('inspectionForm').reset();
+        document.querySelectorAll('.zone-btn, .prio-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('preview').style.display = 'none';
+        photoData = null;
+        btn.disabled = false;
+        btn.innerText = 'СОХРАНИТЬ И ОТПРАВИТЬ';
+        document.getElementById('date').valueAsDate = new Date(); // Вернуть дату
+    }
+
+    async function syncData() {
+        const records = await getAllRecords();
+        const btn = document.getElementById('submitBtn');
+        
+        for (const rec of records) {
+            if (rec.synced) continue;
+            
+            btn.innerText = `Синхронизация... (${rec.id})`;
+            try {
+                // Отправка на сервер
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(rec)
+                });
+                
+                if (response.ok) {
+                    await deleteRecord(rec.id); // Удаляем из локальной БД если успешно
+                }
+            } catch (e) {
+                console.error('Ошибка синхронизации', e);
+            }
+        }
+        
+        btn.innerText = 'СОХРАНИТЬ И ОТПРАВИТЬ';
+    }
+
+    // Авто-синхронизация при появлении сети
+    window.addEventListener('online', syncData);
+
+    // Уведомление
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+</script>
+
+</body>
+</html>
