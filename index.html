@@ -419,10 +419,10 @@
             btn.innerText = `Синхронизация... (${rec.id})`;
             try {
                 // Отправка на сервер
-                const response = await fetch(API_URL + '?redirect=follow', {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify(rec),
-                    headers: { 'Content-Type': 'text/plain' }
+                    redirect: 'follow'
                 });
                 
                 if (response.ok) {
