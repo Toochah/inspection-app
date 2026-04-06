@@ -115,6 +115,18 @@
             cursor: pointer;
         }
         .photo-area:active { background: #f0f0f0; }
+        
+        .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .photo-btn {
+            padding: 15px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            background: white;
+            text-align: center;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .photo-btn:active { background: #f0f0f0; border-color: var(--primary); }
         #preview { max-width: 100%; margin-top: 10px; border-radius: 8px; display: none; }
 
         /* Нижняя панель */
@@ -229,11 +241,18 @@
         <!-- Фото -->
         <div class="card">
             <span class="label">Фотофиксация</span>
-            <div class="photo-area" onclick="document.getElementById('fileInput').click()">
-                <span style="font-size:24px">📷</span><br>
-                Нажмите для съемки
+            <div class="photo-grid">
+                <div class="photo-btn" onclick="takePhoto()">
+                    <span style="font-size:24px">📷</span><br>
+                    Камера
+                </div>
+                <div class="photo-btn" onclick="uploadPhoto()">
+                    <span style="font-size:24px">🖼️</span><br>
+                    Галерея
+                </div>
             </div>
-            <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+            <input type="file" id="galleryInput" accept="image/*" style="display:none" onchange="handlePhoto(this)">
             <img id="preview" alt="Предпросмотр">
         </div>
 
@@ -287,6 +306,16 @@
         document.getElementById('priority').value = value;
     }
 
+    // Выбор фото через камеру
+    function takePhoto() {
+        document.getElementById('cameraInput').click();
+    }
+    
+    // Выбор фото из галереи
+    function uploadPhoto() {
+        document.getElementById('galleryInput').click();
+    }
+    
     // Обработка фото (сжатие)
     let photoData = null;
     function handlePhoto(input) {
