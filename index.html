@@ -419,13 +419,9 @@
             btn.innerText = `Синхронизация... (${rec.id})`;
             try {
                 // Отправка на сервер
-                const formData = new URLSearchParams();
-                    formData.append('data', JSON.stringify(rec));
-                    
-                    const response = await fetch(API_URL, {
+                const response = await fetch(API_URL, {
                         method: 'POST',
-                        body: formData,
-                        redirect: 'follow'
+                        body: JSON.stringify(rec)
                     });
                 
                 if (response.ok) {
