@@ -420,15 +420,15 @@
             try {
                 // Отправка на сервер
                 const response = await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(rec)
-                    });
+                    method: 'POST',
+                    body: JSON.stringify(rec)
+                });
                 
                 if (response.ok) {
                     await deleteRecord(rec.id); // Удаляем из локальной БД если успешно
                 }
             } catch (e) {
-                console.error("������ �������������"); console.log("URL:", API_URL); console.error, e);
+                console.error("Ошибка синхронизации"); console.log("URL:", API_URL); console.error(e);
             }
         }
         
@@ -449,6 +449,3 @@
 
 </body>
 </html>
-
-
-
