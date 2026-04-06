@@ -419,11 +419,14 @@
             btn.innerText = `Синхронизация... (${rec.id})`;
             try {
                 // Отправка на сервер
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(rec),
-                    redirect: 'follow'
-                });
+                const formData = new URLSearchParams();
+                    formData.append('data', JSON.stringify(rec));
+                    
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: formData,
+                        redirect: 'follow'
+                    });
                 
                 if (response.ok) {
                     await deleteRecord(rec.id); // Удаляем из локальной БД если успешно
