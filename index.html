@@ -914,10 +914,40 @@
 
     function openScanner() {
         document.getElementById('scannerModal').classList.add('show');
+        document.getElementById('manualPointId').value = '';
+        
+        if (html5QrCode) {
+            html5QrCode.clear();
+            html5QrCode = null;
+        }
         
         html5QrCode = new Html5Qrcode("reader-full");
-        html5QrCode.start(
-            { facingMode: "environment" },
+        
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length) {
+                const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
+                
+                html5QrCode.start(
+                    cameraId,
+                    {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0
+                    },
+                    onScanSuccess,
+                    onScanFailure
+                ).catch(err => {
+                    console.error('Scanner start failed:', err);
+                    showToast('Camera failed. Enter ID manually.');
+                });
+            } else {
+                showToast('No camera found. Enter ID manually.');
+            }
+        }).catch(err => {
+            console.error('Camera access failed:', err);
+            showToast('No camera access. Enter ID manually.');
+        });
+    }
             { fps: 10, qrbox: { width: 250, height: 250 } },
             onScanSuccess,
             onScanFailure
@@ -927,11 +957,14 @@
     function closeScanner() {
         document.getElementById('scannerModal').classList.remove('show');
         if (html5QrCode) {
-            html5QrCode.stop().then(() => {
+            html5QrCode.stop().catch(err => {
+                console.error('Stop error:', err);
+            }).finally(() => {
                 html5QrCode.clear();
                 html5QrCode = null;
             });
         }
+    }
     }
 
     function onScanSuccess(decodedText, decodedResult) {
