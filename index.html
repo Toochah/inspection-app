@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1976d2">
     <title>Осмотр Складского Комплекса</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
             --primary: #1976d2;
@@ -338,29 +338,6 @@
             width: 40px; height: 40px; font-size: 20px; cursor: pointer;
         }
         #reader-full { flex: 1; width: 100%; }
-        .manual-input-area {
-            padding: 20px;
-            background: white;
-        }
-        .manual-input-area input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        .manual-input-area button {
-            width: 100%;
-            padding: 15px;
-            background: #1976d2;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
 
         /* Bottom nav */
         .bottom-nav {
@@ -562,9 +539,15 @@
             </div>
         </div>
 
-        <button class="scan-btn" id="scanBtn" style="display:none;" onclick="openScanner()">
-            <span>📷</span> Сканировать QR-код
+        <button class="scan-btn" id="scanBtn" style="display:none;" onclick="showManualInput()">
+            <span>📷</span> Ввести ID точки
         </button>
+        
+        <div id="manualInputArea" style="display:none;background:white;border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+            <h3 style="font-size:14px;margin-bottom:10px;">Введите ID точки</h3>
+            <input type="text" id="manualPointId" placeholder="Например: DGU-01" style="text-transform:uppercase;margin-bottom:10px;">
+            <button onclick="manualPointInput()" style="width:100%;padding:15px;background:#1976d2;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;">Ввести</button>
+        </div>
 
         <button class="complete-btn" id="completeBtn" onclick="completePatrol()">
             ✅ Завершить обход
@@ -581,11 +564,6 @@
         <h3>📷 Наведите камеру на QR-код</h3>
     </div>
     <div id="reader-full"></div>
-    <div class="manual-input-area">
-        <p style="margin-bottom:10px;color:#666;">Или введите ID точки вручную:</p>
-        <input type="text" id="manualPointId" placeholder="Например: DGU-01">
-        <button onclick="manualPointInput()">Ввести</button>
-    </div>
 </div>
 
 <!-- Bottom Navigation -->
@@ -608,7 +586,7 @@
 
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxOs8SPmbOxM5cfQnH4Gk8kmNkmSm5ZlZ2qRn1x9MNJLxnH8mPzXWFYKpMonh9R1s7LKA/exec';
-    const PATROL_API_URL = 'https://script.google.com/macros/s/AKfycbxfOr0Whdz4L-eUKapouGe8Zk8IkPabHbH53n5NZ9TGl0O1zSzyWYFWfaAaOh-An4DV1g/exec';
+    const PATROL_API_URL = 'https://script.google.com/macros/s/ВАШ_URL_PATROL_SCRIPT/exec';
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XKYMN6BaABuXBeefUBraY1ASd_QT5tejkMFerMzV8DQ/gviz/tq?tqx=out:json';
 
     // Navigation
@@ -914,40 +892,10 @@
 
     function openScanner() {
         document.getElementById('scannerModal').classList.add('show');
-        document.getElementById('manualPointId').value = '';
-        
-        if (html5QrCode) {
-            html5QrCode.clear();
-            html5QrCode = null;
-        }
         
         html5QrCode = new Html5Qrcode("reader-full");
-        
-        Html5Qrcode.getCameras().then(devices => {
-            if (devices && devices.length) {
-                const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
-                
-                html5QrCode.start(
-                    cameraId,
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0
-                    },
-                    onScanSuccess,
-                    onScanFailure
-                ).catch(err => {
-                    console.error('Scanner start failed:', err);
-                    showToast('Camera failed. Enter ID manually.');
-                });
-            } else {
-                showToast('No camera found. Enter ID manually.');
-            }
-        }).catch(err => {
-            console.error('Camera access failed:', err);
-            showToast('No camera access. Enter ID manually.');
-        });
-    }
+        html5QrCode.start(
+            { facingMode: "environment" },
             { fps: 10, qrbox: { width: 250, height: 250 } },
             onScanSuccess,
             onScanFailure
@@ -957,23 +905,22 @@
     function closeScanner() {
         document.getElementById('scannerModal').classList.remove('show');
         if (html5QrCode) {
-            html5QrCode.stop().catch(err => {
-                console.error('Stop error:', err);
-            }).finally(() => {
+            html5QrCode.stop().then(() => {
                 html5QrCode.clear();
                 html5QrCode = null;
             });
         }
     }
-    }
 
-    function onScanSuccess(decodedText, decodedResult) {
+    function onScanSuccess(decodedText) {
         try {
-            let pointId = decodedText.trim();
+            let pointId;
             try {
                 const data = JSON.parse(decodedText);
-                pointId = data.id || pointId;
-            } catch(e) {}
+                pointId = data.id;
+            } catch(e) {
+                pointId = decodedText.trim();
+            }
             
             const point = patrolPoints.find(p => p.id === pointId);
             if (!point) {
@@ -990,30 +937,10 @@
             currentPoint = point;
             closeScanner();
             showPointDialog(point);
+            
         } catch (e) {
-            showToast('❌ Ошибка: ' + e.message);
+            showToast('❌ Ошибка чтения QR');
         }
-    }
-
-    function manualPointInput() {
-        const pointId = document.getElementById('manualPointId').value.trim().toUpperCase();
-        if (!pointId) { alert('Введите ID точки!'); return; }
-        
-        const point = patrolPoints.find(p => p.id === pointId);
-        if (!point) {
-            showToast('❌ Точка не найдена: ' + pointId);
-            return;
-        }
-        
-        const alreadyScanned = scannedPoints.find(s => s.id === pointId);
-        if (alreadyScanned) {
-            showToast('⚠️ Точка уже пройдена');
-            return;
-        }
-        
-        currentPoint = point;
-        closeScanner();
-        showPointDialog(point);
     }
 
     function onScanFailure(error) {
@@ -1087,6 +1014,33 @@
         } catch (e) {
             console.error('Ошибка отправки данных обхода:', e);
         }
+    }
+
+    function showManualInput() {
+        const area = document.getElementById('manualInputArea');
+        area.style.display = area.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function manualPointInput() {
+        const pointId = document.getElementById('manualPointId').value.trim().toUpperCase();
+        if (!pointId) { alert('Введите ID точки!'); return; }
+        
+        const point = patrolPoints.find(p => p.id === pointId);
+        if (!point) {
+            showToast('Точка не найдена: ' + pointId);
+            return;
+        }
+        
+        const alreadyScanned = scannedPoints.find(s => s.id === pointId);
+        if (alreadyScanned) {
+            showToast('Точка уже пройдена');
+            return;
+        }
+        
+        currentPoint = point;
+        showPointDialog(point);
+        document.getElementById('manualPointId').value = '';
+        document.getElementById('manualInputArea').style.display = 'none';
     }
 
     function completePatrol() {
