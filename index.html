@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#1976d2">
     <title>Осмотр Складского Комплекса</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
             --primary: #1976d2;
@@ -37,6 +38,7 @@
             z-index: 100;
         }
         .header h1 { margin: 0; font-size: 18px; }
+        .header .subtitle { font-size: 12px; opacity: 0.9; margin-top: 5px; }
         .connection-status {
             font-size: 12px;
             margin-top: 5px;
@@ -193,6 +195,151 @@
         .critical-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
         .critical-table tr:last-child td { border-bottom: none; }
 
+        /* Patrol styles */
+        .patrol-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .patrol-card h3 { font-size: 14px; margin-bottom: 10px; color: #333; }
+        
+        .scan-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .scan-btn:active { opacity: 0.9; }
+        .scan-btn span { font-size: 24px; }
+
+        .progress-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1976d2, #4caf50);
+            transition: width 0.3s;
+        }
+        .progress-text { font-size: 13px; color: #666; display: flex; justify-content: space-between; }
+
+        .point-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #ccc;
+        }
+        .point-card.scanned { border-left-color: var(--success); }
+        .point-card.issue { border-left-color: var(--warning); }
+        
+        .point-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .point-id { font-weight: bold; font-size: 14px; color: var(--primary); }
+        .point-name { font-size: 15px; font-weight: 600; margin-bottom: 5px; }
+        .point-time { font-size: 12px; color: #666; }
+        .point-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+        }
+        .point-status.ok { background: var(--success); }
+        .point-status.issue { background: var(--warning); }
+        .point-status.pending { background: #ccc; color: #666; }
+
+        .issue-form {
+            background: #fff3e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+        .issue-form.show { display: block; }
+        .issue-form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .issue-btn {
+            padding: 10px 20px;
+            background: var(--warning);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .ok-btn {
+            padding: 10px 20px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .complete-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            display: none;
+        }
+        .complete-btn.show { display: block; }
+
+        .scanner-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+        .scanner-modal.show { display: flex; }
+        .scanner-header { padding: 15px; text-align: center; color: white; background: rgba(0,0,0,0.5); }
+        .scanner-close {
+            position: absolute; top: 15px; right: 15px;
+            background: white; border: none; border-radius: 50%;
+            width: 40px; height: 40px; font-size: 20px; cursor: pointer;
+        }
+        #reader-full { flex: 1; width: 100%; }
+
+        /* Bottom nav */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -228,6 +375,7 @@
     </div>
 </div>
 
+<!-- PAGE 1: Inspection Form -->
 <div class="page active" id="page-inspection">
     <div class="container">
         <form id="inspectionForm">
@@ -304,6 +452,7 @@
     </div>
 </div>
 
+<!-- PAGE 2: Dashboard -->
 <div class="page" id="page-dashboard">
     <div class="container">
         <div class="scorecards">
@@ -361,6 +510,57 @@
     </div>
 </div>
 
+<!-- PAGE 3: Patrol -->
+<div class="page" id="page-patrol">
+    <div class="container">
+        <div class="patrol-card">
+            <h3>👤 Дежурный</h3>
+            <select id="guardSelect">
+                <option value="">-- Выберите дежурного --</option>
+                <option value="Акузин Данис Геннадьевич">Акузин Данис Геннадьевич</option>
+                <option value="Хакимзянов Илшат Шарифзянович">Хакимзянов Илшат Шарифзянович</option>
+                <option value="Зотов Александр Владимирович">Зотов Александр Владимирович</option>
+                <option value="Сергеев Олег Павлович">Сергеев Олег Павлович</option>
+                <option value="Гритчин Андрей Владимирович">Гритчин Андрей Владимирович</option>
+            </select>
+            <button class="scan-btn" onclick="startPatrol()">
+                <span>🚀</span> Начать обход
+            </button>
+        </div>
+
+        <div class="progress-card" id="progressCard" style="display:none;">
+            <h3>📊 Прогресс обхода</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text">
+                <span>Пройдено: <strong id="scannedCount">0</strong> из <strong>23</strong></span>
+                <span id="percentText">0%</span>
+            </div>
+        </div>
+
+        <button class="scan-btn" id="scanBtn" style="display:none;" onclick="openScanner()">
+            <span>📷</span> Сканировать QR-код
+        </button>
+
+        <button class="complete-btn" id="completeBtn" onclick="completePatrol()">
+            ✅ Завершить обход
+        </button>
+
+        <div id="pointsList"></div>
+    </div>
+</div>
+
+<!-- Scanner Modal -->
+<div class="scanner-modal" id="scannerModal">
+    <button class="scanner-close" onclick="closeScanner()">✕</button>
+    <div class="scanner-header">
+        <h3>📷 Наведите камеру на QR-код</h3>
+    </div>
+    <div id="reader-full"></div>
+</div>
+
+<!-- Bottom Navigation -->
 <div class="bottom-nav">
     <button class="nav-btn active" onclick="showPage('inspection')">
         <span>📝</span>
@@ -370,22 +570,30 @@
         <span>📊</span>
         Дашборд
     </button>
+    <button class="nav-btn" onclick="showPage('patrol')">
+        <span>🔍</span>
+        Обход
+    </button>
 </div>
 
 <div class="toast" id="toast">Сохранено</div>
 
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxOs8SPmbOxM5cfQnH4Gk8kmNkmSm5ZlZ2qRn1x9MNJLxnH8mPzXWFYKpMonh9R1s7LKA/exec';
+    const PATROL_API_URL = 'https://script.google.com/macros/s/ВАШ_URL_PATROL_SCRIPT/exec';
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XKYMN6BaABuXBeefUBraY1ASd_QT5tejkMFerMzV8DQ/gviz/tq?tqx=out:json';
 
+    // Navigation
     function showPage(page) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + page).classList.add('active');
         event.target.closest('.nav-btn').classList.add('active');
+        
         if (page === 'dashboard') loadDashboard();
     }
 
+    // Net status
     document.getElementById('date').valueAsDate = new Date();
     function updateNetStatus() {
         const isOnline = navigator.onLine;
@@ -396,6 +604,7 @@
     window.addEventListener('offline', updateNetStatus);
     updateNetStatus();
 
+    // Form functions
     function selectZone(el, value) {
         document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
@@ -434,6 +643,7 @@
         }
     }
 
+    // IndexedDB
     const DB_NAME = 'InspectionDB';
     const STORE_NAME = 'records';
     function getDB() {
@@ -475,6 +685,7 @@
         });
     }
 
+    // Submit
     async function submitForm() {
         const btn = document.getElementById('submitBtn');
         const zone = document.getElementById('zone').value;
@@ -530,6 +741,7 @@
         setTimeout(() => t.classList.remove('show'), 3000);
     }
 
+    // Dashboard
     let chartsInitialized = false;
     async function loadDashboard() {
         try {
@@ -596,6 +808,218 @@
         } catch (e) {
             console.error('Ошибка загрузки дашборда:', e);
         }
+    }
+
+    // Patrol
+    const patrolPoints = [
+        { id: 'DGU-01', name: 'ДГУ 1', code: 'Точка №1' },
+        { id: 'DGU-02', name: 'ДГУ 2', code: 'Точка №2' },
+        { id: 'DGU-03', name: 'ДГУ 3', code: 'Точка №3' },
+        { id: 'VENT-01', name: 'Вентустановка 1', code: 'Точка №4' },
+        { id: 'VENT-02', name: 'Вентустановка 2', code: 'Точка №5' },
+        { id: 'KNS-01', name: 'КНС 1', code: 'Точка №6' },
+        { id: 'KNS-02', name: 'КНС 2', code: 'Точка №7' },
+        { id: 'ITP-01', name: 'ИТП 1', code: 'Точка №8' },
+        { id: 'ITP-02', name: 'ИТП 2', code: 'Точка №9' },
+        { id: 'BOILER-01', name: 'Бойлер 1', code: 'Точка №10' },
+        { id: 'PUMP-01', name: 'Насос 1', code: 'Точка №11' },
+        { id: 'GRSH-01', name: 'ГРЩ 1', code: 'Точка №12' },
+        { id: 'GRSH-02', name: 'ГРЩ 2', code: 'Точка №13' },
+        { id: 'GRSH-03', name: 'ГРЩ 3', code: 'Точка №14' },
+        { id: 'LIGHT-OUT', name: 'Наружное освещение', code: 'Точка №15' },
+        { id: 'LIGHT-EMG', name: 'Аварийное освещение', code: 'Точка №16' },
+        { id: 'EXIT-01', name: 'Эвакуационный выход 1', code: 'Точка №17' },
+        { id: 'EXIT-02', name: 'Эвакуационный выход 2', code: 'Точка №18' },
+        { id: 'EXIT-03', name: 'Эвакуационный выход 3', code: 'Точка №19' },
+        { id: 'EXIT-04', name: 'Эвакуационный выход 4', code: 'Точка №20' },
+        { id: 'TERR-WINTER', name: 'Территория (зима)', code: 'Точка №21' },
+        { id: 'ITP-03', name: 'ИТП 3', code: 'Точка №22' },
+        { id: 'KNS-03', name: 'КНС 3', code: 'Точка №23' },
+    ];
+
+    let scannedPoints = [];
+    let patrolStarted = false;
+    let html5QrCode = null;
+    let currentPoint = null;
+
+    function startPatrol() {
+        const guard = document.getElementById('guardSelect').value;
+        if (!guard) { alert('Выберите дежурного!'); return; }
+        
+        patrolStarted = true;
+        document.getElementById('scanBtn').style.display = 'block';
+        document.getElementById('progressCard').style.display = 'block';
+        document.querySelector('.header .subtitle').innerText = '👤 ' + guard;
+        
+        renderPoints();
+        showToast('🚀 Обход начат!');
+    }
+
+    function renderPoints() {
+        const container = document.getElementById('pointsList');
+        const progress = (scannedPoints.length / patrolPoints.length) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('scannedCount').innerText = scannedPoints.length;
+        document.getElementById('percentText').innerText = Math.round(progress) + '%';
+
+        if (scannedPoints.length === patrolPoints.length) {
+            document.getElementById('completeBtn').classList.add('show');
+        }
+
+        container.innerHTML = patrolPoints.map(point => {
+            const scanned = scannedPoints.find(s => s.id === point.id);
+            const status = scanned ? (scanned.issue ? 'issue' : 'scanned') : 'pending';
+            const statusText = scanned ? (scanned.issue ? '⚠️ Замечание' : '✅ Пройдена') : '⏳ Ожидает';
+            
+            return '<div class="point-card ' + status + '">' +
+                '<div class="point-header">' +
+                    '<span class="point-id">' + point.id + '</span>' +
+                    '<span class="point-status ' + (scanned ? status : 'pending') + '">' + statusText + '</span>' +
+                '</div>' +
+                '<div class="point-name">' + point.name + '</div>' +
+                '<div style="font-size:12px;color:#999;">' + point.code + '</div>' +
+                (scanned ? '<div class="point-time">🕐 ' + scanned.time + '</div>' : '') +
+                (scanned && scanned.issue ? '<div style="margin-top:8px;font-size:13px;color:#ff9800;">📝 ' + scanned.issue + '</div>' : '') +
+            '</div>';
+        }).join('');
+    }
+
+    function openScanner() {
+        document.getElementById('scannerModal').classList.add('show');
+        
+        html5QrCode = new Html5Qrcode("reader-full");
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess,
+            onScanFailure
+        );
+    }
+
+    function closeScanner() {
+        document.getElementById('scannerModal').classList.remove('show');
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                html5QrCode = null;
+            });
+        }
+    }
+
+    function onScanSuccess(decodedText) {
+        try {
+            let pointId;
+            try {
+                const data = JSON.parse(decodedText);
+                pointId = data.id;
+            } catch(e) {
+                pointId = decodedText.trim();
+            }
+            
+            const point = patrolPoints.find(p => p.id === pointId);
+            if (!point) {
+                showToast('❌ Точка не найдена: ' + pointId);
+                return;
+            }
+            
+            const alreadyScanned = scannedPoints.find(s => s.id === pointId);
+            if (alreadyScanned) {
+                showToast('⚠️ Точка уже пройдена');
+                return;
+            }
+            
+            currentPoint = point;
+            closeScanner();
+            showPointDialog(point);
+            
+        } catch (e) {
+            showToast('❌ Ошибка чтения QR');
+        }
+    }
+
+    function onScanFailure(error) {
+        // Ignore
+    }
+
+    function showPointDialog(point) {
+        const container = document.getElementById('pointsList');
+        const dialogHtml = '<div class="point-card scanned" id="dialog-' + point.id + '">' +
+            '<div class="point-name">✅ ' + point.name + ' (' + point.id + ')</div>' +
+            '<div style="margin-top:10px;">' +
+                '<button class="ok-btn" onclick="markPoint(\'' + point.id + '\', true)">✅ Без замечаний</button>' +
+                '<button class="issue-btn" onclick="showIssueForm(\'' + point.id + '\')">⚠️ Есть замечание</button>' +
+            '</div>' +
+            '<div class="issue-form" id="issue-' + point.id + '">' +
+                '<textarea id="issue-text-' + point.id + '" rows="3" placeholder="Опишите замечание..."></textarea>' +
+                '<button class="issue-btn" onclick="markPoint(\'' + point.id + '\', false)">Сохранить</button>' +
+            '</div>' +
+        '</div>';
+        
+        container.insertAdjacentHTML('afterbegin', dialogHtml);
+        document.getElementById('dialog-' + point.id).scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showIssueForm(pointId) {
+        document.getElementById('issue-' + pointId).classList.add('show');
+    }
+
+    function markPoint(pointId, isOk) {
+        const point = patrolPoints.find(p => p.id === pointId);
+        const now = new Date();
+        const time = now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+        
+        let issue = null;
+        if (!isOk) {
+            issue = document.getElementById('issue-text-' + pointId).value;
+            if (!issue) { alert('Введите описание замечания!'); return; }
+        }
+        
+        scannedPoints.push({
+            id: pointId,
+            name: point.name,
+            time: time,
+            issue: issue
+        });
+        
+        const dialog = document.getElementById('dialog-' + pointId);
+        if (dialog) dialog.remove();
+        
+        renderPoints();
+        showToast(isOk ? '✅ ' + point.name + ' - без замечаний' : '⚠️ Замечание зафиксировано');
+        
+        // Send to Google Sheets
+        sendPatrolData(pointId, point.name, issue, time);
+    }
+
+    async function sendPatrolData(pointId, pointName, issue, scanTime) {
+        const guard = document.getElementById('guardSelect').value;
+        try {
+            await fetch(PATROL_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    type: 'patrol_record',
+                    guard: guard,
+                    pointId: pointId,
+                    pointName: pointName,
+                    issue: issue,
+                    scanTime: scanTime
+                })
+            });
+        } catch (e) {
+            console.error('Ошибка отправки данных обхода:', e);
+        }
+    }
+
+    function completePatrol() {
+        const guard = document.getElementById('guardSelect').value;
+        const now = new Date();
+        const date = now.toLocaleDateString('ru-RU');
+        const time = now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+        
+        const summary = '📋 Обход завершён!\n\n👤 Дежурный: ' + guard + '\n📅 Дата: ' + date + '\n🕐 Время завершения: ' + time + '\n✅ Пройдено точек: ' + scannedPoints.length + ' из ' + patrolPoints.length + '\n⚠️ Замечаний: ' + scannedPoints.filter(p => p.issue).length;
+        
+        alert(summary);
+        showToast('🎉 Обход завершён!');
     }
 </script>
 
