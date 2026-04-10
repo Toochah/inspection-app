@@ -546,6 +546,7 @@
     async function updateStatus(defectId, newStatus) {
         if (newStatus === 'Исправлено') {
             currentCommentDefectId = defectId;
+            document.getElementById('commentText').value = ''; // Очищаем поле!
             document.getElementById('commentModal').classList.add('show');
             return;
         }
