@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 Дашборд - Складской комплекс</title>
+    <title>📊 Дашборд главного инженера</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -17,16 +17,11 @@
             --status-high: #ed6c02;
             --status-fixed: #2e7d32;
             --status-new: #c62828;
+            --status-work: #f57c00;
             --status-medium: #1976d2;
             --status-low: #4caf50;
             --button-primary: #1976d2;
             --button-hover: #1565c0;
-            --chart-1: #1976d2;
-            --chart-2: #2196f3;
-            --chart-3: #4caf50;
-            --chart-4: #ff9800;
-            --chart-5: #f44336;
-            --chart-6: #9c27b0;
         }
 
         [data-theme="dark"] {
@@ -40,16 +35,11 @@
             --status-high: #ffd93d;
             --status-fixed: #6bcf7e;
             --status-new: #ff6b6b;
+            --status-work: #ffb74d;
             --status-medium: #64b5f6;
             --status-low: #81c784;
             --button-primary: #3a7bd5;
             --button-hover: #4c8fe0;
-            --chart-1: #3a7bd5;
-            --chart-2: #64b5f6;
-            --chart-3: #81c784;
-            --chart-4: #ffb74d;
-            --chart-5: #ff6b6b;
-            --chart-6: #ce93d8;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -57,6 +47,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
+            line-height: 1.5;
             transition: background 0.3s, color 0.3s;
         }
 
@@ -65,36 +56,23 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 24px;
+            padding: 14px 24px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 100;
         }
-        .header h1 { font-size: 1.4rem; font-weight: 600; }
-        .header-info { text-align: right; }
-        .header-info .update-time { font-size: 0.85rem; color: var(--text-secondary); }
-        .header-info .auto-refresh { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; }
+        .header h1 { font-size: 1.3rem; font-weight: 600; }
         .header-controls { display: flex; gap: 10px; align-items: center; }
+        .header-info { text-align: right; font-size: 0.8rem; color: var(--text-secondary); }
 
         /* Buttons */
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            background: var(--button-primary);
-            color: white;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: background 0.2s;
-        }
-        .btn:hover { background: var(--button-hover); }
         .btn-outline {
             background: transparent;
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 8px 16px;
+            padding: 7px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85rem;
@@ -105,7 +83,7 @@
             background: none;
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 6px 10px;
+            padding: 5px 10px;
             cursor: pointer;
             font-size: 1.1rem;
             color: var(--text-primary);
@@ -115,208 +93,238 @@
 
         .container { padding: 20px; max-width: 1400px; margin: 0 auto; }
 
-        /* Scorecards */
+        /* Stats */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 14px;
+            margin-bottom: 20px;
         }
         .stat-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 18px;
+            padding: 16px;
             text-align: center;
             transition: background 0.3s, border-color 0.3s;
         }
-        .stat-card .stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .stat-card .stat-value { font-size: 2.2rem; font-weight: 700; }
+        .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-value { font-size: 2rem; font-weight: 700; }
         .stat-card.total .stat-value { color: var(--button-primary); }
-        .stat-card.critical .stat-value { color: var(--status-critical); }
-        .stat-card.high .stat-value { color: var(--status-high); }
-        .stat-card.overdue .stat-value { color: var(--status-new); }
+        .stat-card.new .stat-value { color: var(--status-new); }
+        .stat-card.work .stat-value { color: var(--status-work); }
         .stat-card.fixed .stat-value { color: var(--status-fixed); }
+        .stat-card.overdue .stat-value { color: var(--status-critical); }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .filter-btn {
+            padding: 6px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background: var(--bg-tertiary); }
+        .filter-btn.active {
+            background: var(--button-primary);
+            color: white;
+            border-color: var(--button-primary);
+        }
 
         /* Charts */
         .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 24px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
         .chart-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 20px;
+            padding: 18px;
             transition: background 0.3s, border-color 0.3s;
         }
-        .chart-card h3 { font-size: 0.95rem; margin-bottom: 15px; color: var(--text-primary); }
-        .chart-card.full { grid-column: 1 / -1; }
+        .chart-card h3 { font-size: 0.9rem; margin-bottom: 12px; color: var(--text-primary); }
 
-        /* Tables */
-        .tables-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .table-card {
+        /* Table */
+        .table-container {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             overflow: hidden;
             transition: background 0.3s, border-color 0.3s;
         }
-        .table-card h3 { font-size: 0.95rem; padding: 16px 20px 0; color: var(--text-primary); }
         .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
         th {
             background: var(--bg-tertiary);
             padding: 10px 14px;
             text-align: left;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text-secondary);
             font-weight: 600;
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
+            white-space: nowrap;
         }
         td { padding: 10px 14px; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
         tr:hover { background: var(--bg-tertiary); }
 
         /* Status badges */
-        .badge {
+        .status {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
+            gap: 5px;
+            padding: 3px 10px;
             border-radius: 12px;
-            font-size: 0.75rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .status-new { background: rgba(255,107,107,0.15); color: var(--status-new); }
+        .status-work { background: rgba(255,217,61,0.15); color: var(--status-work); }
+        .status-fixed { background: rgba(107,207,126,0.15); color: var(--status-fixed); }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.72rem;
             font-weight: 600;
         }
-        .badge.critical { background: rgba(255,107,107,0.15); color: var(--status-critical); }
-        .badge.high { background: rgba(255,217,61,0.15); color: var(--status-high); }
-        .badge.medium { background: rgba(100,181,246,0.15); color: var(--status-medium); }
-        .badge.low { background: rgba(129,199,132,0.15); color: var(--status-low); }
-        .badge.overdue { background: rgba(255,107,107,0.15); color: var(--status-critical); animation: pulse 2s infinite; }
-        .badge.fixed { background: rgba(107,207,126,0.15); color: var(--status-fixed); }
+        .priority-critical { background: rgba(255,107,107,0.15); color: var(--status-critical); }
+        .priority-high { background: rgba(255,217,61,0.15); color: var(--status-high); }
+        .priority-medium { background: rgba(100,181,246,0.15); color: var(--status-medium); }
+        .priority-low { background: rgba(129,199,132,0.15); color: var(--status-low); }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .overdue-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: rgba(255,107,107,0.15);
+            color: var(--status-critical);
+            animation: pulse 2s infinite;
         }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--status-fixed); display: inline-block; margin-right: 5px; }
-        .status-dot.refreshing { background: var(--status-high); animation: pulse 1s infinite; }
+        .status-dot.refreshing { background: var(--status-work); animation: pulse 1s infinite; }
 
-        .empty { text-align: center; padding: 20px; color: var(--text-secondary); font-size: 0.85rem; }
+        .empty { text-align: center; padding: 24px; color: var(--text-secondary); font-size: 0.85rem; }
 
         /* Footer */
         .footer {
-            margin-top: 24px;
+            margin-top: 20px;
             text-align: center;
             color: var(--text-secondary);
-            font-size: 0.8rem;
-            padding: 16px;
+            font-size: 0.78rem;
+            padding: 14px;
             border-top: 1px solid var(--border-color);
         }
 
         /* Responsive */
-        @media (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(3, 1fr); }
-        }
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 768px) {
-            .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
-            .charts-grid, .tables-grid { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div>
-        <h1>🏭 Дашборд главного инженера</h1>
-    </div>
+    <h1>🔧 Дашборд главного инженера</h1>
     <div class="header-controls">
         <button class="btn-outline" id="exportBtn">📤 Экспорт</button>
         <button class="icon-btn" id="themeToggle" aria-label="Переключить тему">🌓</button>
     </div>
     <div class="header-info">
-        <div class="update-time"><span class="status-dot" id="statusDot"></span> <span id="lastUpdate">Загрузка...</span></div>
-        <div class="auto-refresh">🔄 Автообновление каждые 15 мин</div>
+        <div><span class="status-dot" id="statusDot"></span> <span id="lastUpdate">Загрузка...</span></div>
+        <div style="margin-top:2px;">🔄 Автообновление каждые 15 мин</div>
     </div>
 </div>
 
 <div class="container">
-    <!-- Scorecards -->
+    <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card total">
-            <div class="stat-label">Всего дефектов</div>
+            <div class="stat-label">Всего заявок</div>
             <div class="stat-value" id="totalCount">-</div>
         </div>
-        <div class="stat-card critical">
-            <div class="stat-label">🔴 Критические</div>
-            <div class="stat-value" id="criticalCount">-</div>
+        <div class="stat-card new">
+            <div class="stat-label">🔴 Новые</div>
+            <div class="stat-value" id="newCount">-</div>
         </div>
-        <div class="stat-card high">
-            <div class="stat-label">🟡 Высокие</div>
-            <div class="stat-value" id="highCount">-</div>
-        </div>
-        <div class="stat-card overdue">
-            <div class="stat-label">⏰ Просроченные (>5 дн)</div>
-            <div class="stat-value" id="overdueCount">-</div>
+        <div class="stat-card work">
+            <div class="stat-label">🟡 В работе</div>
+            <div class="stat-value" id="workCount">-</div>
         </div>
         <div class="stat-card fixed">
             <div class="stat-label">✅ Исправлено</div>
             <div class="stat-value" id="fixedCount">-</div>
         </div>
+        <div class="stat-card overdue">
+            <div class="stat-label">⏰ Просроченные</div>
+            <div class="stat-value" id="overdueCount">-</div>
+        </div>
     </div>
 
-    <!-- Charts Row 1 -->
+    <!-- Filters -->
+    <div class="filters">
+        <button class="filter-btn active" data-filter="all">Все</button>
+        <button class="filter-btn" data-filter="new">🔴 Новые</button>
+        <button class="filter-btn" data-filter="work">🟡 В работе</button>
+        <button class="filter-btn" data-filter="fixed">✅ Исправлено</button>
+        <button class="filter-btn" data-filter="critical">⚡ Критические</button>
+        <button class="filter-btn" data-filter="overdue">⏰ Просроченные</button>
+    </div>
+
+    <!-- Charts -->
     <div class="charts-grid">
         <div class="chart-card">
             <h3>🏗️ Дефекты по зонам</h3>
             <canvas id="zonesChart"></canvas>
         </div>
         <div class="chart-card">
-            <h3>🔧 Типы дефектов</h3>
-            <canvas id="typesChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Charts Row 2 -->
-    <div class="charts-grid">
-        <div class="chart-card">
             <h3>📈 Динамика по дням</h3>
             <canvas id="timelineChart"></canvas>
         </div>
-        <div class="chart-card">
-            <h3>🎯 По приоритетам</h3>
-            <canvas id="priorityChart"></canvas>
-        </div>
     </div>
 
-    <!-- Tables -->
-    <div class="tables-grid">
-        <div class="table-card">
-            <h3>🔴 Просроченные дефекты (>5 дней в статусе "Новый")</h3>
-            <div class="table-wrapper">
-                <table id="overdueTable">
-                    <thead><tr><th>ID</th><th>Зона</th><th>Описание</th><th>Дата</th><th>Дней</th></tr></thead>
-                    <tbody><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="table-card">
-            <h3>✅ Недавно исправленные</h3>
-            <div class="table-wrapper">
-                <table id="fixedTable">
-                    <thead><tr><th>ID</th><th>Зона</th><th>Описание</th><th>Дата испр.</th></tr></thead>
-                    <tbody><tr><td colspan="4" class="empty">Загрузка...</td></tr></tbody>
-                </table>
-            </div>
+    <!-- Main Table -->
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table id="mainTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Дата</th>
+                        <th>Зона</th>
+                        <th>Дефект</th>
+                        <th>Приоритет</th>
+                        <th>Статус</th>
+                        <th>Инженер</th>
+                        <th>Источник</th>
+                        <th>Срок</th>
+                    </tr>
+                </thead>
+                <tbody id="mainTableBody">
+                    <tr><td colspan="9" class="empty">⏳ Загрузка данных...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -327,18 +335,16 @@
 
 <script>
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XKYMN6BaABuXBeefUBraY1ASd_QT5tejkMFerMzV8DQ/gviz/tq?tqx=out:json';
-    let chartsInitialized = false;
+    let allRecords = [];
     let charts = {};
 
-    // Theme toggle
+    // === THEME ===
     const themeToggle = document.getElementById('themeToggle');
     const htmlEl = document.documentElement;
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    htmlEl.setAttribute('data-theme', savedTheme);
+    htmlEl.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
 
     themeToggle.addEventListener('click', () => {
-        const current = htmlEl.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
+        const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         htmlEl.setAttribute('data-theme', next);
         localStorage.setItem('theme', next);
         updateChartsTheme();
@@ -356,7 +362,6 @@
     }
 
     function updateChartsTheme() {
-        if (!chartsInitialized) return;
         const colors = getChartColors();
         Object.values(charts).forEach(chart => {
             if (chart.options.scales) {
@@ -365,13 +370,28 @@
                     if (scale.grid) scale.grid.color = colors.grid;
                 });
             }
-            if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
-                chart.options.plugins.legend.labels.color = colors.text;
-            }
+            if (chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = colors.text;
             chart.update();
         });
     }
 
+    // === FILTERS ===
+    let currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            renderTable();
+        });
+    });
+
+    // === EXPORT ===
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        window.open('https://docs.google.com/spreadsheets/d/1XKYMN6BaABuXBeefUBraY1ASd_QT5tejkMFerMzV8DQ/edit', '_blank');
+    });
+
+    // === DATA LOAD ===
     async function loadDashboard() {
         document.getElementById('statusDot').classList.add('refreshing');
 
@@ -381,71 +401,38 @@
             const json = JSON.parse(text.substring(47).slice(0, -2));
             const rows = json.table.rows.map(r => r.c.map(c => c ? c.v : ''));
 
-            const records = rows.slice(1).map(r => ({
+            allRecords = rows.slice(1).map(r => ({
                 id: r[0], date: r[1], time: r[2], inspector: r[3],
                 zone: r[4], defectType: r[5], priority: r[6],
                 description: r[7], photo: r[8], status: r[9] || 'Новый', source: r[10]
-            }));
+            })).reverse();
 
-            // Scorecards
-            document.getElementById('totalCount').innerText = records.length;
-            document.getElementById('criticalCount').innerText = records.filter(r => r.priority === 'Критический').length;
-            document.getElementById('highCount').innerText = records.filter(r => r.priority === 'Высокий').length;
-            document.getElementById('fixedCount').innerText = records.filter(r => r.status === 'Исправлено').length;
+            // Stats
+            const total = allRecords.length;
+            const newDefs = allRecords.filter(r => r.status === 'Новый');
+            const workDefs = allRecords.filter(r => r.status === 'В работе');
+            const fixedDefs = allRecords.filter(r => r.status === 'Исправлено');
 
-            // Overdue
             const fiveDaysAgo = new Date();
             fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-            const overdue = records.filter(r => r.status === 'Новый' && r.date && new Date(r.date) < fiveDaysAgo);
+            const overdue = newDefs.filter(r => r.date && new Date(r.date) < fiveDaysAgo);
+
+            document.getElementById('totalCount').innerText = total;
+            document.getElementById('newCount').innerText = newDefs.length;
+            document.getElementById('workCount').innerText = workDefs.length;
+            document.getElementById('fixedCount').innerText = fixedDefs.length;
             document.getElementById('overdueCount').innerText = overdue.length;
 
-            // Charts data
-            const zones = {}, types = {}, priorities = { 'Низкий': 0, 'Средний': 0, 'Высокий': 0, 'Критический': 0 }, dates = {};
-            records.forEach(r => {
+            // Charts
+            const zones = {}, dates = {};
+            allRecords.forEach(r => {
                 zones[r.zone] = (zones[r.zone] || 0) + 1;
-                if (r.defectType) types[r.defectType] = (types[r.defectType] || 0) + 1;
-                if (priorities[r.priority] !== undefined) priorities[r.priority]++;
                 if (r.date) dates[r.date] = (dates[r.date] || 0) + 1;
             });
             const sortedDates = Object.keys(dates).sort();
-
-            // Overdue table
-            const overdueBody = document.querySelector('#overdueTable tbody');
-            if (overdue.length === 0) {
-                overdueBody.innerHTML = '<tr><td colspan="5" class="empty">✅ Нет просроченных дефектов</td></tr>';
-            } else {
-                overdueBody.innerHTML = overdue.sort((a,b) => new Date(a.date) - new Date(b.date)).map(r => {
-                    const days = Math.floor((new Date() - new Date(r.date)) / (1000*60*60*24));
-                    return `<tr>
-                        <td><strong>${r.id}</strong></td>
-                        <td>${r.zone}</td>
-                        <td>${r.description}</td>
-                        <td>${r.date}</td>
-                        <td><span class="badge overdue">${days} дн</span></td>
-                    </tr>`;
-                }).join('');
-            }
-
-            // Fixed table
-            const fixed = records.filter(r => r.status === 'Исправлено').slice(-10).reverse();
-            const fixedBody = document.querySelector('#fixedTable tbody');
-            if (fixed.length === 0) {
-                fixedBody.innerHTML = '<tr><td colspan="4" class="empty">Пока нет исправленных</td></tr>';
-            } else {
-                fixedBody.innerHTML = fixed.map(r => `<tr>
-                    <td><strong>${r.id}</strong></td>
-                    <td>${r.zone}</td>
-                    <td>${r.description}</td>
-                    <td><span class="badge fixed">Исправлено</span></td>
-                </tr>`).join('');
-            }
-
-            // Charts
             const colors = getChartColors();
-            if (chartsInitialized) {
-                Object.values(charts).forEach(c => c.destroy());
-            }
-            chartsInitialized = true;
+
+            Object.values(charts).forEach(c => c.destroy());
 
             charts.zones = new Chart(document.getElementById('zonesChart'), {
                 type: 'bar',
@@ -453,25 +440,16 @@
                 options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: colors.text }, grid: { color: colors.grid } }, x: { ticks: { color: colors.text }, grid: { display: false } } } }
             });
 
-            charts.types = new Chart(document.getElementById('typesChart'), {
-                type: 'doughnut',
-                data: { labels: Object.keys(types), datasets: [{ data: Object.values(types), backgroundColor: colors.charts }] },
-                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: colors.text, boxWidth: 12, font: { size: 11 } } } } }
-            });
-
             charts.timeline = new Chart(document.getElementById('timelineChart'), {
                 type: 'line',
-                data: { labels: sortedDates, datasets: [{ data: sortedDates.map(d => dates[d]), borderColor: colors.charts[0], backgroundColor: colors.charts[0] + '20', fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: colors.charts[0] }] },
+                data: { labels: sortedDates, datasets: [{ data: sortedDates.map(d => dates[d]), borderColor: colors.charts[0], backgroundColor: colors.charts[0] + '20', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: colors.charts[0] }] },
                 options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: colors.text }, grid: { color: colors.grid } }, x: { ticks: { color: colors.text }, grid: { display: false } } } }
             });
 
-            charts.priority = new Chart(document.getElementById('priorityChart'), {
-                type: 'bar',
-                data: { labels: Object.keys(priorities), datasets: [{ data: Object.values(priorities), backgroundColor: [colors.charts[2], colors.charts[1], colors.charts[3], colors.charts[4]], borderRadius: 6 }] },
-                options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { color: colors.text }, grid: { color: colors.grid } }, y: { ticks: { color: colors.text }, grid: { display: false } } } }
-            });
+            // Table
+            renderTable();
 
-            // Update time
+            // Time
             const now = new Date();
             const timeStr = now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
             document.getElementById('lastUpdate').innerText = 'Обновлено: ' + timeStr;
@@ -479,21 +457,75 @@
             document.getElementById('statusDot').classList.remove('refreshing');
 
         } catch (e) {
-            console.error('Ошибка загрузки:', e);
-            document.getElementById('lastUpdate').innerText = 'Ошибка обновления';
+            console.error('Ошибка:', e);
+            document.getElementById('lastUpdate').innerText = 'Ошибка';
             document.getElementById('statusDot').classList.remove('refreshing');
         }
     }
 
-    // Export button
-    document.getElementById('exportBtn').addEventListener('click', () => {
-        window.open('https://docs.google.com/spreadsheets/d/1XKYMN6BaABuXBeefUBraY1ASd_QT5tejkMFerMzV8DQ/edit', '_blank');
-    });
+    function renderTable() {
+        const tbody = document.getElementById('mainTableBody');
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+        let filtered = allRecords.filter(r => {
+            if (currentFilter === 'all') return true;
+            if (currentFilter === 'new') return r.status === 'Новый';
+            if (currentFilter === 'work') return r.status === 'В работе';
+            if (currentFilter === 'fixed') return r.status === 'Исправлено';
+            if (currentFilter === 'critical') return r.priority === 'Критический';
+            if (currentFilter === 'overdue') return r.status === 'Новый' && r.date && new Date(r.date) < fiveDaysAgo;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty">Нет данных для отображения</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(r => {
+            const statusClass = r.status === 'Новый' ? 'status-new' : r.status === 'В работе' ? 'status-work' : 'status-fixed';
+            const statusText = r.status === 'Новый' ? '🔴 Новый' : r.status === 'В работе' ? '🟡 В работе' : '✅ Исправлено';
+
+            let prioClass = 'priority-medium', prioText = r.priority;
+            if (r.priority === 'Критический') { prioClass = 'priority-critical'; prioText = '🔴 Крит.'; }
+            else if (r.priority === 'Высокий') { prioClass = 'priority-high'; prioText = '🟡 Выс.'; }
+            else if (r.priority === 'Низкий') { prioClass = 'priority-low'; prioText = '🟢 Низ.'; }
+
+            // Calculate deadline (date + 5 days for new, +10 for work)
+            let deadline = '-';
+            if (r.date) {
+                const d = new Date(r.date);
+                const addDays = r.status === 'Новый' ? 5 : r.status === 'В работе' ? 10 : 0;
+                if (addDays > 0) {
+                    d.setDate(d.getDate() + addDays);
+                    deadline = d.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'});
+                }
+            }
+
+            // Overdue check
+            let deadlineCell = deadline;
+            if (r.status === 'Новый' && r.date && new Date(r.date) < fiveDaysAgo) {
+                const days = Math.floor((new Date() - new Date(r.date)) / (1000*60*60*24));
+                deadlineCell = `<span class="overdue-badge">${days} дн проср.</span>`;
+            }
+
+            return `<tr>
+                <td><strong>${r.id}</strong></td>
+                <td>${r.date || '-'}</td>
+                <td>${r.zone || '-'}</td>
+                <td>${r.description || '-'}</td>
+                <td><span class="priority-badge ${prioClass}">${prioText}</span></td>
+                <td><span class="status ${statusClass}">${statusText}</span></td>
+                <td>${r.inspector || '-'}</td>
+                <td>${r.source || '-'}</td>
+                <td>${deadlineCell}</td>
+            </tr>`;
+        }).join('');
+    }
 
     // Initial load
     loadDashboard();
-
-    // Auto-refresh every 15 minutes
     setInterval(loadDashboard, 15 * 60 * 1000);
 </script>
 
